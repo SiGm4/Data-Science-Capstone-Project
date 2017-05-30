@@ -1,0 +1,189 @@
+---
+title: "Data Science Capstone - Milestone Report"
+author: "Dimitris Gkiokas"
+date: "May 14, 2017"
+output: html_document
+---
+
+##Synopsis
+This report provides a Milestone Report for the Coursera Data Science Specialization Capstone Project. The goal of this report is to demonstrate work on exploratory data analysis of our datasets. For this capstone project the datasets are provided in 4 different languages: German, English (US), Finnish and Russian, but the analysis will be performed on the English (US) ones. The datasets include data from twitter, from blogs and from news.
+
+The goal of the capstone project is to create a predictive text model using a large text corpus as training data, in order to be able to predict subsequent words given some text. This will eventually be built as a Shiny application.
+
+##Getting the Data
+
+####Downloading the Data
+
+The dataset is downloaded from the following url: [Capstone Dataset](https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip).
+
+```{r download}
+if (!file.exists("Coursera-SwiftKey.zip")) {
+   download.file("https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip","Coursera-SwiftKey.zip")
+   unzip("Coursera-SwiftKey.zip")
+}
+download.file("http://www.cs.cmu.edu/~biglou/resources/bad-words.txt","bad-words.txt")
+getwd()
+```
+
+####Loading the necessary libraries
+
+```{r libraries,warning=FALSE,message=FALSE}
+library(stringi)
+library(tm)
+library(SnowballC)
+library(RWeka)
+library(ggplot2)
+library(wordcloud)
+```
+
+#### Loading the data into R
+
+In the case of the news dataset, in order to bypass an "End Of File" error that appeared in the middle of the document, there is a different method of loading in the file.
+
+```{r loading,cache=TRUE}
+twitter.url <- "./Coursera-SwiftKey/final/en_US/en_US.twitter.txt"
+blog.url <- "./Coursera-SwiftKey/final/en_US/en_US.blogs.txt"
+news.url <- "./Coursera-SwiftKey/final/en_US/en_US.news.txt"
+twitter <- readLines(twitter.url, skipNul = TRUE, encoding = "UTF-8")
+blog <- readLines(blog.url, skipNul = TRUE, encoding = "UTF-8")
+news.file <- file(news.url,"rb")
+news <- readLines(news.file, skipNul = TRUE, encoding = "UTF-8")
+close(news.file)
+```
+
+##Basic Summary of Data
+
+As soon as the data are loaded in R, a basic summary of the characteristics of the datasets occurs, in order to get a helicopter view of the data.
+
+```{r summary,echo=TRUE,cache=TRUE}
+create_summary_table <- function(twitter,blog,news){
+  stats <- data.frame(source = c("twitter","blog","news"),
+            arraySizeMB = c(object.size(twitter)/1024^2,object.size(blog)/1024^2,object.size(news)/1024^2),
+            fileSizeMB = c(file.info(twitter.url)$size/1024^2,file.info(blog.url)$size/1024^2,file.info(news.url)$size/1024^2),
+            lineCount = c(length(twitter),length(blog),length(news)),
+            wordCount = c(sum(stri_count_words(twitter)),sum(stri_count_words(blog)),sum(stri_count_words(news))),
+            charCount = c(stri_stats_general(twitter)[3],stri_stats_general(blog)[3],stri_stats_general(news)[3])
+  )
+  print(stats)
+}
+create_summary_table(twitter,blog,news)
+```
+
+##Sampling the data
+
+The datasets are quite large in size, therefore there are 10.000 rows of each dataset sampled and combined into a single dataset.
+```{r sampling,cache=TRUE}
+set.seed(1805)
+sampleData <- c(sample(twitter,10000),sample(blog,10000),sample(news,10000))
+```
+
+##Cleaning the Data
+
+Now the data are transformed into the core data type of NLP analysis, which is a Corpus. Immediately after, a set of cleaning procedures is taking place, in order to get meaningful insights on the data. 
+
+During the exploratory analysis the stopwords are removed from the text, but in the actual prediction model they will be left inside, as those words need to be predicted by the model as well.
+
+```{r cleaning,cache=TRUE}
+corpus <- VCorpus(VectorSource(sampleData))
+
+toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern," ",x))})
+#Cleaning all non ASCII characters
+corpus <- tm_map(corpus,toSpace,"[^[:graph:]]")
+#Transforming all data to lower case
+corpus <- tm_map(corpus,content_transformer(tolower))
+#Deleting all English stopwords and any stray letters left my the non-ASCII removal
+corpus <- tm_map(corpus,removeWords,c(stopwords("english"),letters))
+#Removing Punctuation
+corpus <- tm_map(corpus,removePunctuation)
+#Removing Numbers
+corpus <- tm_map(corpus,removeNumbers)
+#Removing Profanities
+profanities = readLines('bad-words.txt')
+corpus <- tm_map(corpus, removeWords, profanities)
+#Removing all stray letters left by the last two calls
+corpus <- tm_map(corpus,removeWords,letters)
+#Striping all extra whitespace
+corpus <- tm_map(corpus,stripWhitespace)
+```
+
+##Exploratory Analysis
+
+Now exploratory data analysis is about to be performed on the data. First of all the n-gram matrices are created for n=1,2,3 and then the most frequent terms are found.
+
+####Creating N-grams
+
+```{r ngrams,cache=TRUE}
+#Creating a unigram DTM
+unigramTokenizer <- function(x) {NGramTokenizer(x, Weka_control(min = 1, max = 1))}
+unigrams <- DocumentTermMatrix(corpus, control = list(tokenize = unigramTokenizer))
+
+#Creating a bigram DTM
+BigramTokenizer <- function(x) {NGramTokenizer(x, Weka_control(min = 2, max = 2))}
+bigrams <- DocumentTermMatrix(corpus, control = list(tokenize = BigramTokenizer))
+
+#Creating a trigram DTM
+TrigramTokenizer <- function(x) {NGramTokenizer(x, Weka_control(min = 3, max = 3))}
+trigrams <- DocumentTermMatrix(corpus, control = list(tokenize = TrigramTokenizer))
+```
+
+####Most Frequent Terms per N-gram
+
+Below the top n-grams for n=1,2,3 can be seen.
+
+```{r freqs}
+freqTerms <- findFreqTerms(unigrams,lowfreq = 1000)
+unigrams_frequency <- sort(colSums(as.matrix(unigrams[,freqTerms])),decreasing = TRUE)
+unigrams_freq_df <- data.frame(word = names(unigrams_frequency), frequency = unigrams_frequency)
+wordcloud(unigrams_freq_df$word,unigrams_freq_df$frequency,scale=c(4,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
+
+freqTerms <- findFreqTerms(bigrams,lowfreq = 75)
+bigrams_frequency <- sort(colSums(as.matrix(bigrams[,freqTerms])),decreasing = TRUE)
+bigrams_freq_df <- data.frame(word = names(bigrams_frequency), frequency = bigrams_frequency)
+wordcloud(bigrams_freq_df$word,bigrams_freq_df$frequency,scale=c(3,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
+
+freqTerms <- findFreqTerms(trigrams,lowfreq = 10)
+trigrams_frequency <- sort(colSums(as.matrix(trigrams[,freqTerms])),decreasing = TRUE)
+trigrams_freq_df <- data.frame(word = names(trigrams_frequency), frequency = trigrams_frequency)
+wordcloud(trigrams_freq_df$word,trigrams_freq_df$frequency,scale=c(3,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
+```
+
+##Graphs
+
+Below the the graphs for the most common ngrams can be seen.
+
+####Most common unigrams
+```{r}
+g <- ggplot(unigrams_freq_df,aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Unigram") + ylab("Frequency") +labs(title="Most common unigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
+g
+```
+
+####Most common bigrams
+```{r}
+g <- ggplot(bigrams_freq_df,aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Bigram") + ylab("Frequency") +labs(title="Most common bigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
+g
+```
+
+####Most common trigrams
+```{r}
+g <- ggplot(trigrams_freq_df,aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Trigram") + ylab("Frequency") +labs(title="Most common trigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
+g
+```
+
+##Prediction Algorithm and Shiny App
+
+Concluding the exploratory analysis of the data, the next steps of this project are to finalize the predictive algorithm, deploy the model as a Shiny application and also create a deck to be able to present the final result.
+
+The predictive algorithm will be using an n-gram backoff model, where it will start by looking for the most common 3-gram or 4-gram that includes the provided text, and either choose the most common one based on frequency, or revert to the immediate smaller n-gram all the way to the unigram. The model will be trained on a bigger dataset than the one used for our exploratory data analysis, and it will include a suggestion based on the most common unigrams (with smoothed probabilities) in case no bigger n-gram provides a suggestion.
+
+As far as the app is concerned, the plan is to have an interactive Shiny application where the user will be able to provide text and quickly get back a prediction on what the next word will be.
+
+##Resources
+
+[1]https://en.wikipedia.org/wiki/Natural_language_processing  
+[2]https://www.quora.com/How-do-you-create-a-corpus-from-a-data-frame-in-R  
+[3]https://cran.r-project.org/web/packages/tm/vignettes/tm.pdf  
+[4]https://cran.r-project.org/web/packages/tm/tm.pdf  
+[5]http://text-analytics101.rxnlp.com/2014/10/all-about-stop-words-for-text-mining.html  
+[6]https://cran.r-project.org/web/packages/RWeka/RWeka.pdf  
+[7]http://www.cs.cmu.edu/~biglou/resources/  
+[8]https://www.datacamp.com/courses/intro-to-text-mining-bag-of-words  
