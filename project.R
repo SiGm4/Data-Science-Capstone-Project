@@ -40,7 +40,7 @@ create_summary_table <- function(twitter,blog,news){
 create_summary_table(twitter,blog,news)
 
 set.seed(1805)
-sampleData <- c(sample(twitter,10000),sample(blog,10000),sample(news,10000))
+sampleData <- c(sample(twitter,3000),sample(blog,3000),sample(news,3000))
 corpus <- VCorpus(VectorSource(sampleData))
 
 toSpace <- content_transformer(function(x, pattern) {return (gsub(pattern," ",x))})
@@ -77,17 +77,17 @@ trigrams <- DocumentTermMatrix(corpus, control = list(tokenize = TrigramTokenize
 #trigrams <- removeSparseTerms(trigrams,0.9999)
 
 
-freqTerms <- findFreqTerms(unigrams,lowfreq = 1000)
+freqTerms <- findFreqTerms(unigrams,lowfreq = 1)
 unigrams_frequency <- sort(colSums(as.matrix(unigrams[,freqTerms])),decreasing = TRUE)
 unigrams_freq_df <- data.frame(word = names(unigrams_frequency), frequency = unigrams_frequency)
 #wordcloud(unigrams_freq_df$word,unigrams_freq_df$frequency,scale=c(4,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
 
-freqTerms <- findFreqTerms(bigrams,lowfreq = 75)
+freqTerms <- findFreqTerms(bigrams,lowfreq = 2)
 bigrams_frequency <- sort(colSums(as.matrix(bigrams[,freqTerms])),decreasing = TRUE)
 bigrams_freq_df <- data.frame(word = names(bigrams_frequency), frequency = bigrams_frequency)
 #wordcloud(bigrams_freq_df$word,bigrams_freq_df$frequency,scale=c(3,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
 
-freqTerms <- findFreqTerms(trigrams,lowfreq = 10)
+freqTerms <- findFreqTerms(trigrams,lowfreq = 2)
 trigrams_frequency <- sort(colSums(as.matrix(trigrams[,freqTerms])),decreasing = TRUE)
 trigrams_freq_df <- data.frame(word = names(trigrams_frequency), frequency = trigrams_frequency)
 #wordcloud(trigrams_freq_df$word,trigrams_freq_df$frequency,scale=c(3,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
