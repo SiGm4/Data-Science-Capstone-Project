@@ -49,7 +49,7 @@ corpus <- tm_map(corpus,toSpace,"[^[:graph:]]")
 #Transforming all data to lower case
 corpus <- tm_map(corpus,content_transformer(tolower))
 #Deleting all English stopwords and any stray letters left my the non-ASCII removal
-corpus <- tm_map(corpus,removeWords,c(stopwords("english"),letters))
+#corpus <- tm_map(corpus,removeWords,c(stopwords("english"),letters))
 #Removing Punctuation
 corpus <- tm_map(corpus,removePunctuation)
 #Removing Numbers
@@ -66,15 +66,19 @@ corpus <- tm_map(corpus,stripWhitespace)
 
 unigramTokenizer <- function(x) {NGramTokenizer(x, Weka_control(min = 1, max = 1))}
 unigrams <- DocumentTermMatrix(corpus, control = list(tokenize = unigramTokenizer))
-#unigrams <- removeSparseTerms(unigrams,0.99)
+unigrams <- removeSparseTerms(unigrams,0.9998)
 
 BigramTokenizer <- function(x) {NGramTokenizer(x, Weka_control(min = 2, max = 2))}
 bigrams <- DocumentTermMatrix(corpus, control = list(tokenize = BigramTokenizer))
-#bigrams <- removeSparseTerms(bigrams,0.999)
+bigrams <- removeSparseTerms(bigrams,0.9998)
 
 TrigramTokenizer <- function(x) {NGramTokenizer(x, Weka_control(min = 3, max = 3))}
 trigrams <- DocumentTermMatrix(corpus, control = list(tokenize = TrigramTokenizer))
-#trigrams <- removeSparseTerms(trigrams,0.9999)
+trigrams <- removeSparseTerms(trigrams,0.9998)
+
+QuadgramTokenizer <- function(x) {NGramTokenizer(x, Weka_control(min = 4, max = 4))}
+quadgrams <- DocumentTermMatrix(corpus, control = list(tokenize = QuadgramTokenizer))
+quadgrams <- removeSparseTerms(quadgrams,0.9998)
 
 
 freqTerms <- findFreqTerms(unigrams,lowfreq = 1)
@@ -82,24 +86,47 @@ unigrams_frequency <- sort(colSums(as.matrix(unigrams[,freqTerms])),decreasing =
 unigrams_freq_df <- data.frame(word = names(unigrams_frequency), frequency = unigrams_frequency)
 #wordcloud(unigrams_freq_df$word,unigrams_freq_df$frequency,scale=c(4,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
 
-freqTerms <- findFreqTerms(bigrams,lowfreq = 2)
+freqTerms <- findFreqTerms(bigrams,lowfreq = 1)
 bigrams_frequency <- sort(colSums(as.matrix(bigrams[,freqTerms])),decreasing = TRUE)
 bigrams_freq_df <- data.frame(word = names(bigrams_frequency), frequency = bigrams_frequency)
 #wordcloud(bigrams_freq_df$word,bigrams_freq_df$frequency,scale=c(3,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
 
-freqTerms <- findFreqTerms(trigrams,lowfreq = 2)
+freqTerms <- findFreqTerms(trigrams,lowfreq = 1)
 trigrams_frequency <- sort(colSums(as.matrix(trigrams[,freqTerms])),decreasing = TRUE)
 trigrams_freq_df <- data.frame(word = names(trigrams_frequency), frequency = trigrams_frequency)
 #wordcloud(trigrams_freq_df$word,trigrams_freq_df$frequency,scale=c(3,.1), colors = brewer.pal(7, "Dark2"), random.order = TRUE, random.color = TRUE, rot.per = 0.35)
 
+freqTerms <- findFreqTerms(quadgrams,lowfreq = 1)
+quadgrams_frequency <- sort(colSums(as.matrix(quadgrams[,freqTerms])),decreasing = TRUE)
+quadgrams_freq_df <- data.frame(word = names(quadgrams_frequency), frequency = quadgrams_frequency)
+
 ####Most common unigrams
-gu <- ggplot(unigrams_freq_df,aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Unigram") + ylab("Frequency") +labs(title="Most common unigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
+gu <- ggplot(head(unigrams_freq_df,15),aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Unigram") + ylab("Frequency") +labs(title="Most common unigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
 gu
 
 ####Most common bigrams
-gb <- ggplot(bigrams_freq_df,aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Bigram") + ylab("Frequency") +labs(title="Most common bigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
+gb <- ggplot(head(bigrams_freq_df,15),aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Bigram") + ylab("Frequency") +labs(title="Most common bigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
 gb
 
 ####Most common trigrams
-gc <- ggplot(trigrams_freq_df,aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Trigram") + ylab("Frequency") +labs(title="Most common trigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
+gc <- ggplot(head(trigrams_freq_df,15),aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Trigram") + ylab("Frequency") +labs(title="Most common trigrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
 gc
+
+####Most common quadrams
+gq <- ggplot(head(quadgrams_freq_df,15),aes(x=reorder(word,-frequency),y=frequency))+geom_bar(stat="identity",fill="darkolivegreen4") + xlab("Quadgram") + ylab("Frequency") +labs(title="Most common quadgrams") + theme(axis.text.x=element_text(angle=55, hjust=1))
+gq
+
+unigrams_freq_df$word <- as.character(unigrams_freq_df$word)
+bigrams_freq_df$word <- as.character(bigrams_freq_df$word)
+trigrams_freq_df$word <- as.character(trigrams_freq_df$word)
+quadgrams_freq_df$word <- as.character(quadgrams_freq_df$word)
+
+saveRDS(unigrams_freq_df,"unigrams.Rdata")
+saveRDS(bigrams_freq_df,"bigrams.Rdata")
+saveRDS(trigrams_freq_df,"trigrams.Rdata")
+saveRDS(quadgrams_freq_df,"quadgrams.Rdata")
+
+unigrams_freq_df <- readRDS("unigrams.Rdata")
+bigrams_freq_df <- readRDS("bigrams.Rdata")
+trigrams_freq_df <- readRDS("trigrams.Rdata")
+quadgrams_freq_df <- readRDS("quadgrams.Rdata")
