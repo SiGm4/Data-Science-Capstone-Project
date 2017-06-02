@@ -130,3 +130,115 @@ unigrams_freq_df <- readRDS("unigrams.Rdata")
 bigrams_freq_df <- readRDS("bigrams.Rdata")
 trigrams_freq_df <- readRDS("trigrams.Rdata")
 quadgrams_freq_df <- readRDS("quadgrams.Rdata")
+
+rm(news,blog,twitter)
+
+spl <- strsplit(bigrams_freq_df$word," ")
+w1 <- sapply(spl,"[[",1)
+w2 <- sapply(spl,"[[",2)
+bi_df <- data.frame(w1,w2,bigrams_freq_df$frequency)
+
+spl <- strsplit(trigrams_freq_df$word," ")
+w1 <- sapply(spl,"[[",1)
+w2 <- sapply(spl,"[[",2)
+w3 <- sapply(spl,"[[",3)
+tri_df <- data.frame(w1,w2,w3,trigrams_freq_df$frequency)
+
+spl <- strsplit(quadgrams_freq_df$word," ")
+w1 <- sapply(spl,"[[",1)
+w2 <- sapply(spl,"[[",2)
+w3 <- sapply(spl,"[[",3)
+w4 <- sapply(spl,"[[",4)
+quad_df <- data.frame(w1,w2,w3,w4,quadgrams_freq_df$frequency)
+
+predict_bi <- function(str){
+  input <- unlist(strsplit(str," "))
+  as.character(bi_df[(bi_df$w1==input[1]),][,2][1])
+}
+predict_tri <- function(str){
+  input <- unlist(strsplit(str," "))
+  as.character(tri_df[(tri_df$w1==input[1] & tri_df$w2==input[2]),][,3][1])
+}
+predict_quad <- function(str){
+  input <- unlist(strsplit(str," "))
+  as.character(quad_df[(quad_df$w1==input[1] & quad_df$w2==input[2] & quad_df$w3==input[3]),][,4][1])
+}
+
+predict_bi("trying")
+predict_tri("thank you")
+predict_quad("you just have")
+
+predict <- function(str){
+  #print(str)
+  wordcount <- length(unlist(strsplit(str," ")))
+  result <- ""
+  if (wordcount == 1){
+    if (is.na(predict_bi(str))){
+      result = "the"
+    }
+    else {
+      result <- predict_bi(str)
+    }
+  }
+  else if (wordcount == 2){
+    if (is.na(predict_tri(str))){
+      if (is.na(predict_bi(str))){
+        result = "the"
+      }
+      else {
+        result <- predict_bi(str)
+      }
+    }
+    else{
+      result <- predict_tri(str)
+    }
+  }
+  else if (wordcount >= 3){
+    new_str <- paste(tail(unlist(strsplit(str," ")),3),collapse=" ")
+    if (is.na(predict_quad(new_str))){
+      if (is.na(predict_tri(new_str))){
+        if (is.na(predict_bi(new_str))){
+          result = "the"
+        }
+        else {
+          result <- predict_bi(new_str)
+        }
+      }
+      else{
+        result <- predict_tri(new_str)
+      }
+    }
+    else{
+      result <- predict_quad(new_str)
+    }
+  }
+  result
+}
+
+
+test_predicts <- function(str){
+  wordcount <- length(unlist(strsplit(str," ")))
+  result <-  NA
+  if (wordcount==1){
+    print(str)
+    result <- predict_bi(str)
+  }
+  else if (wordcount == 2){
+    new_str <- tail(unlist(strsplit(str," ")),1)
+    print(new_str)
+    result <- c(predict_bi(str),predict_tri(new_str))
+  }
+  else if (wordcount >= 3){
+    new_str1 <- tail(unlist(strsplit(str," ")),1)
+    new_str2 <- paste(tail(unlist(strsplit(str," ")),2),collapse=" ")
+    new_str3 <- paste(tail(unlist(strsplit(str," ")),3),collapse=" ")
+    print(new_str1)
+    print(new_str2)
+    print(new_str3)
+    result <- c(predict_bi(new_str1),predict_tri(new_str2),predict_quad(new_str3))
+  }
+  result
+}
+
+
+
