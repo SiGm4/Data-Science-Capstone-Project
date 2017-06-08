@@ -6,13 +6,14 @@ download.file("http://www.cs.cmu.edu/~biglou/resources/bad-words.txt","bad-words
 #Loading files 
 #library(readr)
 library(tm)
-library(RWeka)
+#library(RWeka)
 library(ggplot2)
 library(dplyr)
 library(SnowballC)
 library(stringi)
 library(doParallel)
 library(text2vec)
+source("functions.R")
 #if (!file.exists("Coursera-SwiftKey.zip")) {
 #  download.file("https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip","Coursera-SwiftKey.zip")
 #  unzip("Coursera-SwiftKey.zip")

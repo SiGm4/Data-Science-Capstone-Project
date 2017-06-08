@@ -3,3 +3,6 @@ capstone_cache
 Coursera-SwiftKey.zip
 .RData
 .Rhistory
+ectagrams.Rdata
+pentagrams.Rdata
+train_tokens.Rdata
