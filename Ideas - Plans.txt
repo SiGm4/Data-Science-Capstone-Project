@@ -1,6 +1,0 @@
-1)Instead of sampling a big amount of lines that throw errors
-in the frequencies (the 8.0gb error), get multiple samples with replacement (bootstraping i think)
-and then average or sum the final frequency dfs. that way you will get
-a better idea of the amounts.
-
-2)Maybe use both removeSparse and freqTerms to account for both documents and plaing frequency
