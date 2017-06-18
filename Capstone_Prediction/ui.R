@@ -1,12 +1,3 @@
-#
-# This is the user-interface definition of a Shiny web application. You can
-# run the application by clicking 'Run App' above.
-#
-# Find out more about building applications with Shiny here:
-# 
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
 library(dplyr)
 js_focus_back_on_input <- 
@@ -42,13 +33,18 @@ shinyUI(navbarPage("Data Science Capstone Project", theme="main.css",
              mainPanel(
                h2("Algorithm"),
                h4("Data Cleaning"),
-               p("First of all, all the non letter characters, like emojis, are being removed. 
-                 Then, all confounders, punctuation and numbers are removed, 
-                 and the cleaning is finished by removing any extra whitespaces."),
+               p("To build the predictive model, 1.000.000 lines from all twitter, blogs and news datasets were sampled. 
+                  The sample dataset was then cleaned, by removing all non-ascii characters, like emoji, being converted 
+                  to lowercase letters and then by removing all contractions, punctuation, numbers, profanities, leftout 
+                  letters and extra whitespaces."),
                br(),
                h4("Prediction Model"),
-               p("In order to predict the consequent word(s), a stupid back-off model is being used. It starts from
-                 the 6-gram, and backs-off to the unigrams if no solution is found in between.")
+               p("The data was then tokenized to form Maximum Likelihood Estimation (MLE) matrices of various n-grams. 
+                  For the sake of accuracy, all frequencies up to 6-grams were computed."),
+               br(),
+               p("Finally, the top 3 predictions, using a simple back-off model, are being calculated as predictions 
+                  to the user input. The reason for having 3 predictions instead of 1 is that the accuracy the user 
+                  experiences is substantially increased.")
              )
          ),
          tabPanel("About",
@@ -71,6 +67,9 @@ shinyUI(navbarPage("Data Science Capstone Project", theme="main.css",
                
                a(href="https://www.linkedin.com/in/dimitris-gkiokas/",
                  img(src="http://dimgkiokas.com/linkedin-icon.png",alt="linkedin-icon",height="36px",width="36px")),
+               
+               a(href="https://github.com/SiGm4/Data-Science-Capstone-Project/",
+                 img(src="http://dimgkiokas.com/github-icon.png",alt="github-icon",height="36px",width="36px")),
                
                a(href="http://www.dimgkiokas.com",
                  img(src="http://dimgkiokas.com/web-icon.png",alt="web-icon",height="36px",width="36px"))
