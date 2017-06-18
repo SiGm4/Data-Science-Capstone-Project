@@ -30,6 +30,7 @@ Finally, the top 3 predictions, using a simple back-off model, are being calcula
 
 - next word prediction app is hosted on shinyapps.io [here](https://sigm4.shinyapps.io/Capstone_Prediction/).  
 - You can find all the code, the milestone report, the presentation etc. in this Github repo [here](https://github.com/SiGm4/Data-Science-Capstone-Project/).  
+- You can find the pitch deck [here](http://rpubs.com/SiGm4/capstone_prediction).  
 - Although there has been a lot of deviation from that, the milestone report can be found [here](http://rpubs.com/SiGm4/dssmilestonerep).  
 - Learn more about the Data Science Coursera Specialization [here](https://www.coursera.org/specializations/jhu-data-science).  
 
